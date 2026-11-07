@@ -295,10 +295,15 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
   function startPoll(){if(started)return;started=true;setInterval(()=>{if(!document.hidden)refresh()},15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()})}
   const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
   async function write(op,path,body){pend++;wseq++;try{await call(op,path,body)}catch(e){throw{code:code(e),message:String(e)}}finally{pend--;wseq++;refresh()}}
+  /* 連續的修改先合併再送出（例如一次點好幾個評分），減少等待；送出前離開頁面會提醒 */
+  const ub={};let uchain=Promise.resolve();
+  function note(m){let t=document.getElementById('shimtoast');if(!t){t=document.createElement('div');t.id='shimtoast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#c62828;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:99999';document.body.appendChild(t)}t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',4000)}
+  function queueUpdate(path,d){if(ub[path]){ub[path]=merge(ub[path],d);return}ub[path]=d;pend++;uchain=uchain.then(async()=>{await new Promise(r=>setTimeout(r,300));const body=ub[path];delete ub[path];try{await call('update',path,body)}catch(e){try{await new Promise(r=>setTimeout(r,1000));await call('update',path,body)}catch(e2){note('儲存失敗，請重新整理後再試')}}finally{pend--;wseq++;refresh()}})}
+  window.addEventListener('beforeunload',e=>{if(pend){e.preventDefault();e.returnValue=''}});
   function docRef(path){return{id:path.split('/').pop(),path,
     get:async()=>({id:path.split('/').pop(),exists:path in cache,data:()=>cache[path],metadata:{fromCache:false,hasPendingWrites:false}}),
     set:async d=>{cache[path]=d;emit();await write('set',path,d)},
-    update:async d=>{if(!(path in cache))throw{code:'invalid_argument'};cache[path]=merge(cache[path],d);emit();await write('update',path,d)},
+    update:async d=>{if(!(path in cache))throw{code:'invalid_argument'};cache[path]=merge(cache[path],d);emit();queueUpdate(path,d)},
     delete:async()=>{delete cache[path];emit();await write('delete',path)},
     onSnapshot:cb=>{const f=()=>cb({id:path.split('/').pop(),exists:path in cache,data:()=>cache[path],metadata:{fromCache:false}});listeners.push({coll:'__doc',cb:f});setTimeout(f,0);return()=>{}}
   }}
