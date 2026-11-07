@@ -287,13 +287,14 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
   const API='https://script.google.com/macros/s/AKfycbwEU_qgq9OrowxZYXvpNXF3CUCtBSHeK63xEgE49W2T7A--dtnUghBb-hKdyYrSrI78xw/exec';
   const run=async(fn,...a)=>{const q=fn==='checkPin'?{op:'checkPin',pin:a[0]}:fn==='app'?{op:'app',pin:a[0]}:{op:a[1],pin:a[0],path:a[2],body:a[3]};const r=await fetch(API,{method:'POST',body:JSON.stringify(q),headers:{'Content-Type':'text/plain;charset=utf-8'},redirect:'follow',credentials:'omit'});const j=await r.json();if(!j.ok)throw new Error(j.error);return j.data};
   const call=(op,path,body)=>run('api',PIN,op,path||'',body?JSON.stringify(body):'');
-  const code=e=>{const m=String((e&&e.message)||e);return m.includes('PIN')?'pin':m.includes('NOTFOUND')?'invalid_argument':'unavailable'};
+  const code=e=>{const m=String((e&&e.message)||e);return m.includes('LOCKED')?'locked':m.includes('PIN')?'pin':m.includes('NOTFOUND')?'invalid_argument':'unavailable'};
   function snap(coll){const docs=Object.keys(cache).filter(p=>{const s=p.split('/');return s.length===2&&s[0]===coll}).map(p=>({id:p.split('/')[1],exists:true,data:()=>cache[p],metadata:{fromCache:false,hasPendingWrites:false}}));return{docs,size:docs.length,empty:!docs.length,metadata:{fromCache:false,hasPendingWrites:false},docChanges:()=>[]}}
   function emit(){listeners.forEach(l=>{try{l.cb(snap(l.coll))}catch(e){console.error(e)}})}
-  async function refresh(){try{cache=JSON.parse(await call('all'));emit()}catch(e){if(code(e)==='pin'){LS.del('ug_pin');showGate('密碼已變更，請重新輸入')}}}
+  let pend=0,wseq=0;
+  async function refresh(){if(pend)return;const s0=wseq;try{const d=JSON.parse(await call('all'));if(pend||s0!==wseq)return;cache=d;emit()}catch(e){if(code(e)==='pin'){LS.del('ug_pin');showGate('密碼已變更，請重新輸入')}}}
   function startPoll(){if(started)return;started=true;setInterval(()=>{if(!document.hidden)refresh()},15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()})}
   const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-  async function write(op,path,body){try{await call(op,path,body)}catch(e){throw{code:code(e),message:String(e)}}finally{refresh()}}
+  async function write(op,path,body){pend++;wseq++;try{await call(op,path,body)}catch(e){throw{code:code(e),message:String(e)}}finally{pend--;wseq++;refresh()}}
   function docRef(path){return{id:path.split('/').pop(),path,
     get:async()=>({id:path.split('/').pop(),exists:path in cache,data:()=>cache[path],metadata:{fromCache:false,hasPendingWrites:false}}),
     set:async d=>{cache[path]=d;emit();await write('set',path,d)},
@@ -311,7 +312,7 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
   const gate=()=>document.getElementById('gate');
   function showGate(msg){gate().classList.add('on');document.getElementById('gerr').textContent=msg||'';const w=LS.get('ug_who');if(w)document.getElementById('gwho').value=w}
   async function enter(pin,who,silent){
-    try{await run('checkPin',pin)}catch(e){if(!silent)document.getElementById('gerr').textContent=code(e)==='pin'?'密碼錯誤':'連線失敗，請再試一次';else showGate();return}
+    try{await run('checkPin',pin)}catch(e){if(!silent)document.getElementById('gerr').textContent=code(e)==='pin'?'密碼錯誤':code(e)==='locked'?'密碼錯太多次，請 15 分鐘後再試':'連線失敗，請再試一次';else showGate();return}
     PIN=pin;WHO=who;LS.set('ug_pin',pin);LS.set('ug_who',who);gate().classList.remove('on');
     const b=document.querySelector('.brand');let x=document.getElementById('whoami');if(b&&!x){x=document.createElement('button');x.id='whoami';x.className='whoami';x.onclick=()=>{document.getElementById('gpin').value=PIN||'';showGate('')};b.appendChild(x)}if(x)x.textContent=who+'・切換';
     try{if(typeof myId!=='undefined'&&myId!==null&&myId!==who){myId=who;render()}}catch(e){}
