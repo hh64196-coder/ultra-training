@@ -291,13 +291,13 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
   function snap(coll){const docs=Object.keys(cache).filter(p=>{const s=p.split('/');return s.length===2&&s[0]===coll}).map(p=>({id:p.split('/')[1],exists:true,data:()=>cache[p],metadata:{fromCache:false,hasPendingWrites:false}}));return{docs,size:docs.length,empty:!docs.length,metadata:{fromCache:false,hasPendingWrites:false},docChanges:()=>[]}}
   function emit(){listeners.forEach(l=>{try{l.cb(snap(l.coll))}catch(e){console.error(e)}})}
   let pend=0,wseq=0;
-  async function refresh(){if(pend)return;const s0=wseq;try{const d=JSON.parse(await call('all'));if(pend||s0!==wseq)return;cache=d;emit()}catch(e){if(code(e)==='pin'){LS.del('ug_pin');showGate('密碼已變更，請重新輸入')}}}
+  async function refresh(){if(pend)return;const s0=wseq;try{const d=JSON.parse(await call('all'));if(pend||s0!==wseq)return;cache=d;LS.set('ug_data',JSON.stringify(d));emit()}catch(e){if(code(e)==='pin'){LS.del('ug_pin');LS.del('ug_data');LS.del('ug_app');showGate('密碼已變更，請重新輸入')}}}
   function startPoll(){if(started)return;started=true;setInterval(()=>{if(!document.hidden)refresh()},15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()})}
   const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
   async function write(op,path,body){pend++;wseq++;try{await call(op,path,body)}catch(e){throw{code:code(e),message:String(e)}}finally{pend--;wseq++;refresh()}}
   /* 連續的修改先合併再送出（例如一次點好幾個評分），減少等待；送出前離開頁面會提醒 */
   const ub={};let uchain=Promise.resolve();
-  function note(m){let t=document.getElementById('shimtoast');if(!t){t=document.createElement('div');t.id='shimtoast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#c62828;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:99999';document.body.appendChild(t)}t.textContent=m;t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',4000)}
+  function note(m,bg){let t=document.getElementById('shimtoast');if(!t){t=document.createElement('div');t.id='shimtoast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#c62828;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:99999';document.body.appendChild(t)}t.textContent=m;t.style.background=bg||'#c62828';t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',4000)}
   function queueUpdate(path,d){if(ub[path]){ub[path]=merge(ub[path],d);return}ub[path]=d;pend++;uchain=uchain.then(async()=>{await new Promise(r=>setTimeout(r,300));const body=ub[path];delete ub[path];try{await call('update',path,body)}catch(e){try{await new Promise(r=>setTimeout(r,1000));await call('update',path,body)}catch(e2){note('儲存失敗，請重新整理後再試')}}finally{pend--;wseq++;refresh()}})}
   window.addEventListener('beforeunload',e=>{if(pend){e.preventDefault();e.returnValue=''}});
   function docRef(path){return{id:path.split('/').pop(),path,
@@ -316,13 +316,24 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
 
   const gate=()=>document.getElementById('gate');
   function showGate(msg){gate().classList.add('on');document.getElementById('gerr').textContent=msg||'';const w=LS.get('ug_who');if(w)document.getElementById('gwho').value=w}
+  /* 開啟速度：上次的資料和系統內容先存在這台裝置，打開時立刻顯示，同時在背景向伺服器拿最新的 */
+  async function decodeApp(b){const bin=atob(b.trim()),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}
+  function injectApp(txt){const sc=document.createElement('script');sc.textContent=txt;document.body.appendChild(sc)}
+  async function loadApp(){
+    if(window.__appLoaded)return;window.__appLoaded=true;
+    const c=LS.get('ug_app');let shown=false;
+    if(c){try{injectApp(await decodeApp(c));shown=true}catch(e){LS.del('ug_app')}}
+    try{const b=await run('app',PIN);if(b!==c){LS.set('ug_app',b);if(!shown){injectApp(await decodeApp(b))}else{note('培訓內容有更新，重新整理頁面即可看到','#1b5e20')}}}
+    catch(e){if(!shown){window.__appLoaded=false;if(code(e)==='pin'){LS.del('ug_pin');LS.del('ug_data');LS.del('ug_app');showGate('密碼已變更，請重新輸入')}else{showGate('載入失敗，請檢查網路後再試')}}}
+  }
   async function enter(pin,who,silent){
-    try{await run('checkPin',pin)}catch(e){if(!silent)document.getElementById('gerr').textContent=code(e)==='pin'?'密碼錯誤':code(e)==='locked'?'密碼錯太多次，請 15 分鐘後再試':'連線失敗，請再試一次';else showGate();return}
+    if(!silent){try{await run('checkPin',pin)}catch(e){document.getElementById('gerr').textContent=code(e)==='pin'?'密碼錯誤':code(e)==='locked'?'密碼錯太多次，請 15 分鐘後再試':'連線失敗，請再試一次';return}}
     PIN=pin;WHO=who;LS.set('ug_pin',pin);LS.set('ug_who',who);gate().classList.remove('on');
     const b=document.querySelector('.brand');let x=document.getElementById('whoami');if(b&&!x){x=document.createElement('button');x.id='whoami';x.className='whoami';x.onclick=()=>{document.getElementById('gpin').value=PIN||'';showGate('')};b.appendChild(x)}if(x)x.textContent=who+'・切換';
     try{if(typeof myId!=='undefined'&&myId!==null&&myId!==who){myId=who;render()}}catch(e){}
-    await refresh();startPoll();readyRes();
-    if(!window.__appLoaded){window.__appLoaded=true;try{const b=await run('app',PIN);const bin=atob(b.trim()),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);const txt=await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text();const sc=document.createElement('script');sc.textContent=txt;document.body.appendChild(sc)}catch(e){window.__appLoaded=false;document.getElementById('gerr').textContent='載入失敗，請重新整理';gate().classList.add('on')}}
+    if(!Object.keys(cache).length){try{const cd=LS.get('ug_data');if(cd)cache=JSON.parse(cd)}catch(e){}}
+    readyRes();startPoll();
+    refresh();loadApp();
   }
   document.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('gbtn').onclick=()=>enter(document.getElementById('gpin').value.trim(),document.getElementById('gwho').value);
