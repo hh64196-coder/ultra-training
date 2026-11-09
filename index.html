@@ -297,7 +297,7 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
   async function write(op,path,body){pend++;wseq++;try{await call(op,path,body)}catch(e){throw{code:code(e),message:String(e)}}finally{pend--;wseq++;refresh()}}
   /* 連續的修改先合併再送出（例如一次點好幾個評分），減少等待；送出前離開頁面會提醒 */
   const ub={};let uchain=Promise.resolve();
-  function note(m,bg){let t=document.getElementById('shimtoast');if(!t){t=document.createElement('div');t.id='shimtoast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#c62828;color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:99999';document.body.appendChild(t)}t.textContent=m;t.style.background=bg||'#c62828';t.style.display='block';clearTimeout(t._h);t._h=setTimeout(()=>t.style.display='none',4000)}
+  function note(m,bg,reload){let t=document.getElementById('shimtoast');if(!t){t=document.createElement('div');t.id='shimtoast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#c62828;color:#fff;padding:12px 18px;border-radius:10px;font-size:15px;z-index:99999;cursor:pointer;white-space:nowrap';document.body.appendChild(t)}t.textContent=m;t.style.background=bg||'#c62828';t.onclick=reload?()=>location.reload():()=>{t.style.display='none'};t.style.display='block';clearTimeout(t._h);if(!reload)t._h=setTimeout(()=>t.style.display='none',4000)}
   function queueUpdate(path,d){if(ub[path]){ub[path]=merge(ub[path],d);return}ub[path]=d;pend++;uchain=uchain.then(async()=>{await new Promise(r=>setTimeout(r,300));const body=ub[path];delete ub[path];try{await call('update',path,body)}catch(e){try{await new Promise(r=>setTimeout(r,1000));await call('update',path,body)}catch(e2){note('儲存失敗，請重新整理後再試')}}finally{pend--;wseq++;refresh()}})}
   window.addEventListener('beforeunload',e=>{if(pend){e.preventDefault();e.returnValue=''}});
   function docRef(path){return{id:path.split('/').pop(),path,
@@ -323,7 +323,7 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
     if(window.__appLoaded)return;window.__appLoaded=true;
     const c=LS.get('ug_app');let shown=false;
     if(c){try{injectApp(await decodeApp(c));shown=true}catch(e){LS.del('ug_app')}}
-    try{const b=await run('app',PIN);if(b!==c){LS.set('ug_app',b);if(!shown){injectApp(await decodeApp(b))}else{note('培訓內容有更新，重新整理頁面即可看到','#1b5e20')}}}
+    try{const b=await run('app',PIN);if(b!==c){LS.set('ug_app',b);if(!shown){injectApp(await decodeApp(b))}else{note('培訓內容有更新，點這裡套用 ↻','#1b5e20',true)}}}
     catch(e){if(!shown){window.__appLoaded=false;if(code(e)==='pin'){LS.del('ug_pin');LS.del('ug_data');LS.del('ug_app');showGate('密碼已變更，請重新輸入')}else{showGate('載入失敗，請檢查網路後再試')}}}
   }
   async function enter(pin,who,silent){
