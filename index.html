@@ -266,12 +266,9 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
 <div id="gate" class="gate"><div class="gbox">
   <img src="logo.jpg" alt="ULTRA GYM" class="glogo">
   <div class="gt">新進教練培訓系統</div>
-  <label for="gpin">密碼</label>
-  <input id="gpin" type="password" inputmode="numeric" maxlength="8" placeholder="輸入密碼" autocomplete="off">
-  <label for="gwho">我是</label>
-  <select id="gwho"><option>James</option><option>Sean</option><option>Elly</option><option>Jenny</option><option>Ike</option><option>Teddy</option></select>
-  <button id="gbtn" type="button">進入</button>
+  <button id="gbtn" type="button" class="gbtn"><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg><span>用 Google 帳號登入</span></button>
   <div id="gerr"></div>
+  <div class="gnote">只有在名單上的帶訓主管可以登入</div>
 </div></div>
 <style>
 .gate{position:fixed;inset:0;background:#000;z-index:50;display:none;align-items:center;justify-content:center;padding:20px}
@@ -279,28 +276,49 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
 .gbox{width:100%;max-width:340px;display:flex;flex-direction:column;gap:8px;color:#fff}
 .glogo{width:100%;max-width:300px;margin:0 auto 6px}
 .gt{text-align:center;color:#a9afba;margin-bottom:14px}
-.gbox label{font-size:13px;color:#a9afba;margin-top:6px}
-.gbox input,.gbox select{border:1px solid #2c3038;background:#14161a;color:#fff;border-radius:12px;padding:12px;font-size:17px;font-family:inherit}
-.gbox button{margin-top:14px;border:none;background:#ff4d00;color:#fff;border-radius:12px;padding:13px;font-size:16px;font-weight:700;font-family:inherit}
-#gerr{color:#ff7a59;font-size:13px;min-height:18px;text-align:center}
-.whoami{margin-left:auto;background:none;border:1px solid #2c3038;color:#a9afba;border-radius:999px;padding:4px 10px;font-size:12px;font-family:inherit}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px;border:none;background:#fff;color:#1f1f1f;border-radius:12px;padding:13px;font-size:16px;font-weight:600;font-family:inherit;cursor:pointer}
+.gbtn[disabled]{opacity:.6}
+.gnote{text-align:center;color:#6b717c;font-size:12px;margin-top:6px}
+#gerr{color:#ff7a59;font-size:13px;min-height:18px;text-align:center;line-height:1.5}
+.whoami{margin-left:auto;background:none;border:1px solid #2c3038;color:#a9afba;border-radius:999px;padding:4px 10px;font-size:12px;font-family:inherit;cursor:pointer}
+.umenu{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:60;display:none;align-items:flex-end;justify-content:center}
+.umenu.on{display:flex}
+.ubox{width:100%;max-width:520px;max-height:85vh;overflow:auto;background:#14161a;border:1px solid #2c3038;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));color:#fff;font-family:inherit}
+.ubox h3{margin:0 0 4px;font-size:18px}
+.ubox .sub{color:#a9afba;font-size:13px;margin-bottom:12px}
+.ubox .row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #23262d}
+.ubox .row .n{font-weight:600;min-width:64px}
+.ubox .row .e{color:#a9afba;font-size:13px;flex:1;word-break:break-all}
+.ubox .row button{background:none;border:1px solid #4a2a22;color:#ff7a59;border-radius:8px;padding:5px 10px;font-size:13px;font-family:inherit}
+.ubox .add{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.ubox input{border:1px solid #2c3038;background:#0d0f12;color:#fff;border-radius:10px;padding:11px;font-size:16px;font-family:inherit}
+.ubox .btns{display:flex;gap:8px;margin-top:4px}
+.ubox .btns button{flex:1;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:700;font-family:inherit}
+.ubox .pri{background:#ff4d00;color:#fff}.ubox .sec{background:#23262d;color:#fff}
+.ubox .uerr{color:#ff7a59;font-size:13px;min-height:16px}
 </style>
 <script>
-/* Google 試算表資料層（網頁版，經由 Apps Script 接口）：模擬原本的 db / user / downloads 介面，主程式不需修改 */
+/* Google 試算表資料層（網頁版，經由 Apps Script 接口）：模擬原本的 db / user / downloads 介面，主程式不需修改
+   登入：Google 帳號（整頁跳轉，iPhone 主畫面 App 也能用）→ 後端比對名單 → 發 30 天登入憑證 */
 (function(){
   const LS={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
-  let PIN=null,WHO=null,cache={},listeners=[],started=false,readyRes;
+  const API='https://script.google.com/macros/s/AKfycbwEU_qgq9OrowxZYXvpNXF3CUCtBSHeK63xEgE49W2T7A--dtnUghBb-hKdyYrSrI78xw/exec';
+  const CLIENT_ID='555041882429-tusl8ttr5eef260uv66p46iu7o61je1u.apps.googleusercontent.com';
+  const SITE=location.origin+location.pathname;
+  /* 舊版的密碼與「我是」不再使用 */
+  ['ug_pin','ug_who'].forEach(LS.del);
+  let SESS=null,ME=null,WHO=null,cache={},listeners=[],started=false,readyRes;
   const ready=new Promise(r=>readyRes=r);
   const isObj=v=>v&&typeof v==='object'&&!Array.isArray(v);
   const merge=(a,b)=>{const o=isObj(a)?{...a}:{};Object.keys(b).forEach(k=>{o[k]=isObj(b[k])&&isObj(o[k])?merge(o[k],b[k]):b[k]});return o};
-  const API='https://script.google.com/macros/s/AKfycbwEU_qgq9OrowxZYXvpNXF3CUCtBSHeK63xEgE49W2T7A--dtnUghBb-hKdyYrSrI78xw/exec';
-  const run=async(fn,...a)=>{const q=fn==='checkPin'?{op:'checkPin',pin:a[0]}:fn==='app'?{op:'app',pin:a[0]}:{op:a[1],pin:a[0],path:a[2],body:a[3]};const r=await fetch(API,{method:'POST',body:JSON.stringify(q),headers:{'Content-Type':'text/plain;charset=utf-8'},redirect:'follow',credentials:'omit'});const j=await r.json();if(!j.ok)throw new Error(j.error);return j.data};
-  const call=(op,path,body)=>run('api',PIN,op,path||'',body?JSON.stringify(body):'');
-  const code=e=>{const m=String((e&&e.message)||e);return m.includes('LOCKED')?'locked':m.includes('PIN')?'pin':m.includes('NOTFOUND')?'invalid_argument':'unavailable'};
+  const post=async q=>{const r=await fetch(API,{method:'POST',body:JSON.stringify(q),headers:{'Content-Type':'text/plain;charset=utf-8'},redirect:'follow',credentials:'omit'});const j=await r.json();if(!j.ok)throw new Error(j.error);return j.data};
+  const call=(op,path,body)=>post({op,sess:SESS,path:path||'',body:body?JSON.stringify(body):''});
+  const code=e=>{const m=String((e&&e.message)||e);return m.startsWith('NOTALLOWED')?'notallowed':m.includes('AUTH')?'auth':m.includes('NOTFOUND')?'invalid_argument':'unavailable'};
+  function signedOut(msg){SESS=null;ME=null;LS.del('ug_sess');LS.del('ug_me');LS.del('ug_data');LS.del('ug_app');showGate(msg)}
   function snap(coll){const docs=Object.keys(cache).filter(p=>{const s=p.split('/');return s.length===2&&s[0]===coll}).map(p=>({id:p.split('/')[1],exists:true,data:()=>cache[p],metadata:{fromCache:false,hasPendingWrites:false}}));return{docs,size:docs.length,empty:!docs.length,metadata:{fromCache:false,hasPendingWrites:false},docChanges:()=>[]}}
   function emit(){listeners.forEach(l=>{try{l.cb(snap(l.coll))}catch(e){console.error(e)}})}
   let pend=0,wseq=0;
-  async function refresh(){if(pend)return;const s0=wseq;try{const d=JSON.parse(await call('all'));if(pend||s0!==wseq)return;cache=d;LS.set('ug_data',JSON.stringify(d));emit()}catch(e){if(code(e)==='pin'){LS.del('ug_pin');LS.del('ug_data');LS.del('ug_app');showGate('密碼已變更，請重新輸入')}}}
+  async function refresh(){if(pend||!SESS)return;const s0=wseq;try{const d=JSON.parse(await call('all'));if(pend||s0!==wseq)return;cache=d;LS.set('ug_data',JSON.stringify(d));emit()}catch(e){const c=code(e);if(c==='auth')signedOut('登入已過期，請重新登入');else if(c==='notallowed')signedOut('你的帳號已不在名單上，請找管理員')}}
   function startPoll(){if(started)return;started=true;setInterval(()=>{if(!document.hidden)refresh()},15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()})}
   const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
   async function write(op,path,body){pend++;wseq++;try{await call(op,path,body)}catch(e){throw{code:code(e),message:String(e)}}finally{pend--;wseq++;refresh()}}
@@ -324,7 +342,24 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
   window.claude={use:async n=>{await ready;return n==='db'?db:n==='user'?user:n==='downloads'?downloads:null}};
 
   const gate=()=>document.getElementById('gate');
-  function showGate(msg){gate().classList.add('on');document.getElementById('gerr').textContent=msg||'';const w=LS.get('ug_who');if(w)document.getElementById('gwho').value=w}
+  const gerr=m=>{document.getElementById('gerr').textContent=m||''};
+  function showGate(msg){gate().classList.add('on');gerr(msg);document.getElementById('gbtn').disabled=false}
+
+  /* Google 登入：整頁跳轉到 Google，回來時網址帶 id_token */
+  function googleLogin(){
+    const nonce=rid()+rid();LS.set('ug_nonce',nonce);
+    const p=new URLSearchParams({client_id:CLIENT_ID,response_type:'id_token',scope:'openid email profile',redirect_uri:SITE,nonce,prompt:'select_account'});
+    location.href='https://accounts.google.com/o/oauth2/v2/auth?'+p.toString();
+  }
+  function jwtPayload(t){try{const s=t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(decodeURIComponent(escape(atob(s+'==='.slice((s.length+3)%4)))))}catch(e){return{}}}
+  async function finishLogin(idToken){
+    gate().classList.add('on');gerr('登入中…');document.getElementById('gbtn').disabled=true;
+    const n=LS.get('ug_nonce');LS.del('ug_nonce');
+    if(!n||jwtPayload(idToken).nonce!==n){showGate('登入失敗，請再試一次');return}
+    try{const r=await post({op:'login',idToken});LS.set('ug_sess',r.sess);LS.set('ug_me',JSON.stringify({name:r.name,email:r.email,admin:r.admin}));LS.del('ug_data');enter(r.sess,{name:r.name,email:r.email,admin:r.admin})}
+    catch(e){const m=String(e.message||e);if(m.startsWith('NOTALLOWED'))showGate((m.split(':')[1]||'這個帳號')+' 不在可登入名單上，請找管理員加入');else showGate('登入失敗，請再試一次')}
+  }
+
   /* 開啟速度：上次的資料和系統內容先存在這台裝置，打開時立刻顯示，同時在背景向伺服器拿最新的 */
   async function decodeApp(b){const bin=atob(b.trim()),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}
   function injectApp(txt){const sc=document.createElement('script');sc.textContent=txt;document.body.appendChild(sc)}
@@ -332,23 +367,44 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
     if(window.__appLoaded)return;window.__appLoaded=true;
     const c=LS.get('ug_app');let shown=false;
     if(c){try{injectApp(await decodeApp(c));shown=true}catch(e){LS.del('ug_app')}}
-    try{const b=await run('app',PIN);if(b!==c){LS.set('ug_app',b);if(!shown){injectApp(await decodeApp(b))}else{note('培訓內容有更新，點這裡套用 ↻','#1b5e20',true)}}}
-    catch(e){if(!shown){window.__appLoaded=false;if(code(e)==='pin'){LS.del('ug_pin');LS.del('ug_data');LS.del('ug_app');showGate('密碼已變更，請重新輸入')}else{showGate('載入失敗，請檢查網路後再試')}}}
+    try{const b=await call('app');if(b!==c){LS.set('ug_app',b);if(!shown){injectApp(await decodeApp(b))}else{note('培訓內容有更新，點這裡套用 ↻','#1b5e20',true)}}}
+    catch(e){if(!shown){window.__appLoaded=false;const k=code(e);if(k==='auth')signedOut('登入已過期，請重新登入');else if(k==='notallowed')signedOut('你的帳號已不在名單上，請找管理員');else showGate('載入失敗，請檢查網路後再試')}}
   }
-  async function enter(pin,who,silent){
-    if(!silent){try{await run('checkPin',pin)}catch(e){document.getElementById('gerr').textContent=code(e)==='pin'?'密碼錯誤':code(e)==='locked'?'密碼錯太多次，請 15 分鐘後再試':'連線失敗，請再試一次';return}}
-    PIN=pin;WHO=who;LS.set('ug_pin',pin);LS.set('ug_who',who);gate().classList.remove('on');
-    const b=document.querySelector('.brand');let x=document.getElementById('whoami');if(b&&!x){x=document.createElement('button');x.id='whoami';x.className='whoami';x.onclick=()=>{document.getElementById('gpin').value=PIN||'';showGate('')};b.appendChild(x)}if(x)x.textContent=who+'・切換';
-    try{if(typeof myId!=='undefined'&&myId!==null&&myId!==who){myId=who;render()}}catch(e){}
+
+  /* 右上角：顯示登入者；管理員多一個「人員名單」 */
+  function accountMenu(){
+    const m=document.getElementById('umenu')||(()=>{const d=document.createElement('div');d.id='umenu';d.className='umenu';d.onclick=e=>{if(e.target===d)d.classList.remove('on')};document.body.appendChild(d);return d})();
+    m.innerHTML='<div class="ubox"><h3>'+esc(ME.name)+'</h3><div class="sub">'+esc(ME.email)+'</div>'+(ME.admin?'<div id="ulist"><div class="sub">讀取人員名單…</div></div>':'')+'<div class="btns" style="margin-top:16px"><button class="sec" id="uclose">關閉</button><button class="sec" id="uout">登出</button></div></div>';
+    m.classList.add('on');
+    document.getElementById('uclose').onclick=()=>m.classList.remove('on');
+    document.getElementById('uout').onclick=()=>{m.classList.remove('on');signedOut('已登出')};
+    if(ME.admin)renderUsers();
+  }
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  async function renderUsers(){
+    const box=document.getElementById('ulist');if(!box)return;
+    let list;try{list=await call('users')}catch(e){box.innerHTML='<div class="uerr">讀取失敗</div>';return}
+    box.innerHTML='<h3 style="margin-top:6px;font-size:16px">人員名單</h3><div class="sub">名單上的人才能用 Google 登入；打勾紀錄會記這裡的名字</div>'+
+      list.map(u=>'<div class="row"><span class="n">'+esc(u.name)+'</span><span class="e">'+esc(u.email)+'</span>'+(u.admin?'<span class="e" style="flex:0">管理員</span>':'<button data-del="'+esc(u.email)+'">移除</button>')+'</div>').join('')+
+      '<div class="add"><input id="uname" placeholder="顯示名稱（例如 Ivan）"><input id="uemail" type="email" inputmode="email" autocapitalize="off" placeholder="Gmail（例如 name@gmail.com）"><div class="uerr" id="uerr"></div><div class="btns"><button class="pri" id="uadd">加入名單</button></div></div>';
+    box.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{const em=b.getAttribute('data-del');if(b.dataset.sure!=='1'){b.dataset.sure='1';b.textContent='確定移除？';return}b.disabled=true;try{await call('delUser','',{email:em});renderUsers()}catch(e){b.textContent='失敗'}});
+    document.getElementById('uadd').onclick=async()=>{const name=document.getElementById('uname').value.trim(),email=document.getElementById('uemail').value.trim().toLowerCase();const er=document.getElementById('uerr');if(!name||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){er.textContent='請填名稱和正確的信箱';return}er.textContent='';try{await call('setUser','',{name,email});renderUsers()}catch(e){er.textContent='加入失敗，請再試一次'}};
+  }
+
+  function enter(sess,me){
+    SESS=sess;ME=me;WHO=me.name;gate().classList.remove('on');gerr('');
+    const b=document.querySelector('.brand');let x=document.getElementById('whoami');if(b&&!x){x=document.createElement('button');x.id='whoami';x.className='whoami';x.onclick=accountMenu;b.appendChild(x)}if(x)x.textContent=me.name+(me.admin?'・名單':'');
+    try{if(typeof myId!=='undefined'&&myId!==null&&myId!==WHO){myId=WHO;render()}}catch(e){}
     if(!Object.keys(cache).length){try{const cd=LS.get('ug_data');if(cd)cache=JSON.parse(cd)}catch(e){}}
     readyRes();startPoll();
     refresh();loadApp();
   }
   document.addEventListener('DOMContentLoaded',()=>{
-    document.getElementById('gbtn').onclick=()=>enter(document.getElementById('gpin').value.trim(),document.getElementById('gwho').value);
-    document.getElementById('gpin').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('gbtn').click()});
-    const p=LS.get('ug_pin'),w=LS.get('ug_who');
-    if(p&&w)enter(p,w,true);else showGate();
+    document.getElementById('gbtn').onclick=googleLogin;
+    const h=new URLSearchParams(location.hash.slice(1));
+    if(h.get('id_token')||h.get('error')){history.replaceState(null,'',SITE);if(h.get('id_token')){finishLogin(h.get('id_token'));return}showGate('已取消登入')}
+    const s=LS.get('ug_sess');let me=null;try{me=JSON.parse(LS.get('ug_me')||'null')}catch(e){}
+    if(s&&me)enter(s,me);else showGate();
   });
 })();
 </script>
