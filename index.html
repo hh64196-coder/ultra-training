@@ -318,7 +318,8 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
   function emit(){listeners.forEach(l=>{try{l.cb(snap(l.coll))}catch(e){console.error(e)}})}
   let pend=0,wseq=0;
   async function refresh(){if(pend||!SESS)return;const s0=wseq;try{const d=JSON.parse(await call('all'));if(pend||s0!==wseq)return;cache=d;LS.set('ug_data',JSON.stringify(d));emit()}catch(e){const c=code(e);if(c==='auth')signedOut('登入已過期，請重新登入');else if(c==='notallowed')signedOut('你的帳號已不在名單上，請找管理員')}}
-  function startPoll(){if(started)return;started=true;setInterval(()=>{if(!document.hidden)refresh()},15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()})}
+  /* 有新版本時：先在背景下載好，等使用者切走再回來（或下次打開）時自動換上，不用按任何按鈕；有未送出的修改時不會換 */
+  function startPoll(){if(started)return;started=true;setInterval(()=>{if(!document.hidden)refresh()},15000);document.addEventListener('visibilitychange',()=>{if(document.hidden)return;if(window.__appStale&&!pend){location.reload();return}refresh()})}
   const rid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
   async function write(op,path,body){pend++;wseq++;try{await call(op,path,body)}catch(e){throw{code:code(e),message:String(e)}}finally{pend--;wseq++;refresh()}}
   /* 連續的修改先合併再送出（例如一次點好幾個評分），減少等待；送出前離開頁面會提醒 */
@@ -366,7 +367,7 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
     if(window.__appLoaded)return;window.__appLoaded=true;
     const c=LS.get('ug_app');let shown=false;
     if(c){try{injectApp(await decodeApp(c));shown=true}catch(e){LS.del('ug_app')}}
-    try{const b=await call('app');if(b!==c){LS.set('ug_app',b);if(!shown){injectApp(await decodeApp(b))}else{note('培訓內容有更新，點這裡套用 ↻','#1b5e20',true)}}}
+    try{const b=await call('app');if(b!==c){LS.set('ug_app',b);if(!shown){injectApp(await decodeApp(b))}else{window.__appStale=true}}}
     catch(e){if(!shown){window.__appLoaded=false;const k=code(e);if(k==='auth')signedOut('登入已過期，請重新登入');else if(k==='notallowed')signedOut('你的帳號已不在名單上，請找管理員');else showGate('載入失敗，請檢查網路後再試')}}
   }
 
