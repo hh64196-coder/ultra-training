@@ -362,7 +362,9 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
 
   /* 開啟速度：上次的資料和系統內容先存在這台裝置，打開時立刻顯示，同時在背景向伺服器拿最新的 */
   async function decodeApp(b){const bin=atob(b.trim()),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return await new Response(new Blob([u]).stream().pipeThrough(new DecompressionStream('gzip'))).text()}
-  function injectApp(txt){const sc=document.createElement('script');sc.textContent=txt;document.body.appendChild(sc)}
+  /* 從總部點名字進來（網址 ?t=培訓生ID）：登入後自動切到那位培訓生 */
+  function gotoPending(){const id=LS.get('ug_goto');if(!id)return;let n=0;const t=setInterval(()=>{const b=[...document.querySelectorAll('#trow [data-pick]')].find(x=>x.getAttribute('data-pick')===id);if(b){clearInterval(t);LS.del('ug_goto');if(!b.classList.contains('on'))b.click();window.scrollTo(0,0)}else if(++n>40){clearInterval(t);LS.del('ug_goto')}},250)}
+  function injectApp(txt){const sc=document.createElement('script');sc.textContent=txt;document.body.appendChild(sc);gotoPending()}
   async function loadApp(){
     if(window.__appLoaded)return;window.__appLoaded=true;
     const c=LS.get('ug_app');let shown=false;
@@ -401,6 +403,8 @@ textarea.note{width:100%;min-height:62px;border:1px solid var(--line);border-rad
   }
   document.addEventListener('DOMContentLoaded',()=>{
     document.getElementById('gbtn').onclick=googleLogin;
+    const qt=new URLSearchParams(location.search).get('t');
+    if(qt&&/^[\w-]{4,40}$/.test(qt)){LS.set('ug_goto',qt);history.replaceState(null,'',SITE+location.hash)}
     const h=new URLSearchParams(location.hash.slice(1));
     if(h.get('id_token')||h.get('error')){history.replaceState(null,'',SITE);if(h.get('id_token')){finishLogin(h.get('id_token'));return}showGate('已取消登入')}
     const s=LS.get('ug_sess');let me=null;try{me=JSON.parse(LS.get('ug_me')||'null')}catch(e){}
